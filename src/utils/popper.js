@@ -240,6 +240,7 @@
         if (typeof this.state.updateCallback === 'function') {
             this.state.updateCallback(data);
         }
+
     };
 
     /**
@@ -437,6 +438,7 @@
         popperOffsets.width   = popperRect.width;
         popperOffsets.height  = popperRect.height;
 
+
         return {
             popper: popperOffsets,
             reference: referenceOffsets
@@ -462,7 +464,6 @@
                 target = root;
             }
             target.addEventListener('scroll', this.state.updateBound);
-            this.state.scrollTarget = target;
         }
     };
 
@@ -475,9 +476,13 @@
     Popper.prototype._removeEventListeners = function() {
         // NOTE: 1 DOM access here
         root.removeEventListener('resize', this.state.updateBound);
-        if (this._options.boundariesElement !== 'window' && this.state.scrollTarget) {
-            this.state.scrollTarget.removeEventListener('scroll', this.state.updateBound);
-            this.state.scrollTarget = null;
+        if (this._options.boundariesElement !== 'window') {
+            var target = getScrollParent(this._reference);
+            // here it could be both `body` or `documentElement` thanks to Firefox, we then check both
+            if (target === root.document.body || target === root.document.documentElement) {
+                target = root;
+            }
+            target.removeEventListener('scroll', this.state.updateBound);
         }
         this.state.updateBound = null;
     };
@@ -514,13 +519,13 @@
             var scrollParent = getScrollParent(this._popper);
             var offsetParentRect = getOffsetRect(offsetParent);
 
-            // Thanks the fucking native API, `document.body.scrollTop` & `document.documentElement.scrollTop`
-            var getScrollTopValue = function (element) {
-                return element == document.body ? Math.max(document.documentElement.scrollTop, document.body.scrollTop) : element.scrollTop;
-            }
-            var getScrollLeftValue = function (element) {
-                return element == document.body ? Math.max(document.documentElement.scrollLeft, document.body.scrollLeft) : element.scrollLeft;
-            }
+			// Thanks the fucking native API, `document.body.scrollTop` & `document.documentElement.scrollTop`
+			var getScrollTopValue = function (element) {
+				return element == document.body ? Math.max(document.documentElement.scrollTop, document.body.scrollTop) : element.scrollTop;
+			}
+			var getScrollLeftValue = function (element) {
+				return element == document.body ? Math.max(document.documentElement.scrollLeft, document.body.scrollLeft) : element.scrollLeft;
+			}
 
             // if the popper is fixed we don't have to substract scrolling from the boundaries
             var scrollTop = data.offsets.popper.position === 'fixed' ? 0 : getScrollTopValue(scrollParent);
